@@ -2,6 +2,106 @@
 
 [![Github Actions](https://github.com/libbpf/libbpf-bootstrap/actions/workflows/build.yml/badge.svg)](https://github.com/libbpf/libbpf-bootstrap/actions/workflows/build.yml)
 
+# Building
+
+libbpf-bootstrap supports multiple build systems that do the same thing.
+This serves as a cross reference for folks coming from different backgrounds.
+
+## Install Dependencies
+
+You will need `clang` (at least v11 or later), `libelf` and `zlib` to build
+the examples, package names may vary across distros.
+
+On Ubuntu/Debian, you need:
+```shell
+$ apt install clang libelf1 libelf-dev zlib1g-dev
+```
+
+On CentOS/Fedora, you need:
+```shell
+$ dnf install clang elfutils-libelf elfutils-libelf-devel zlib-devel
+```
+## Getting the source code
+
+Download the git repository and check out submodules:
+```shell
+$ git clone --recurse-submodules https://github.com/yanjingang/libbpf-demo
+```
+
+## C Examples
+
+CMake build:
+
+```shell
+$ git submodule update --init --recursive       # check out libbpf
+$ mkdir build && cd build
+$ cmake ../examples/c
+$ make
+$ sudo ./bootstrap
+TIME     EVENT COMM             PID     PPID    FILENAME/EXIT CODE
+00:21:22 EXIT  python3.8        4032353 4032352 [0] (123ms)
+00:21:22 EXEC  mkdir            4032379 4032337 /usr/bin/mkdir
+00:21:22 EXIT  mkdir            4032379 4032337 [0] (1ms)
+00:21:22 EXEC  basename         4032382 4032381 /usr/bin/basename
+00:21:22 EXIT  basename         4032382 4032381 [0] (0ms)
+00:21:22 EXEC  sh               4032381 4032380 /bin/sh
+00:21:22 EXEC  dirname          4032384 4032381 /usr/bin/dirname
+00:21:22 EXIT  dirname          4032384 4032381 [0] (1ms)
+00:21:22 EXEC  readlink         4032387 4032386 /usr/bin/readlink
+```
+
+Makefile build:
+
+```shell
+$ git submodule update --init --recursive       # check out libbpf
+$ cd examples/c
+$ make
+$ sudo ./bootstrap
+<...>
+^C
+```
+
+XMake build (Linux):
+
+```shell
+$ git submodule update --init --recursive       # check out libbpf
+$ cd examples/c
+$ xmake
+$ xmake run bootstrap
+```
+
+XMake build (Android):
+
+```shell
+$ git submodule update --init --recursive       # check out libbpf
+$ cd examples/c
+$ xmake f -p android
+$ xmake
+```
+
+Install [Xmake](https://github.com/xmake-io/xmake)
+
+```shell
+$ bash <(wget https://xmake.io/shget.text -O -)
+$ source ~/.xmake/profile
+```
+
+## Rust Examples
+
+Install `libbpf-cargo`:
+```shell
+$ cargo install libbpf-cargo
+```
+
+Build using `cargo`:
+```shell
+$ cd examples/rust
+$ cargo build --release
+$ sudo ./target/release/xdp 1
+<...>
+```
+
+
 ## minimal
 
 `minimal` is just that – a minimal practical BPF application example. It
@@ -301,105 +401,6 @@ please check `ipproto_mapping` of `examples/c/sockfilter.c` for the supported pr
 $ sudo ./sockfilter -i <interface>
 interface:lo    protocol: UDP   127.0.0.1:51845(src) -> 127.0.0.1:53(dst)
 interface:lo    protocol: UDP   127.0.0.1:41552(src) -> 127.0.0.1:53(dst)
-```
-
-# Building
-
-libbpf-bootstrap supports multiple build systems that do the same thing.
-This serves as a cross reference for folks coming from different backgrounds.
-
-## Install Dependencies
-
-You will need `clang` (at least v11 or later), `libelf` and `zlib` to build
-the examples, package names may vary across distros.
-
-On Ubuntu/Debian, you need:
-```shell
-$ apt install clang libelf1 libelf-dev zlib1g-dev
-```
-
-On CentOS/Fedora, you need:
-```shell
-$ dnf install clang elfutils-libelf elfutils-libelf-devel zlib-devel
-```
-## Getting the source code
-
-Download the git repository and check out submodules:
-```shell
-$ git clone --recurse-submodules https://github.com/libbpf/libbpf-bootstrap
-```
-
-## C Examples
-
-Makefile build:
-
-```shell
-$ git submodule update --init --recursive       # check out libbpf
-$ cd examples/c
-$ make
-$ sudo ./bootstrap
-TIME     EVENT COMM             PID     PPID    FILENAME/EXIT CODE
-00:21:22 EXIT  python3.8        4032353 4032352 [0] (123ms)
-00:21:22 EXEC  mkdir            4032379 4032337 /usr/bin/mkdir
-00:21:22 EXIT  mkdir            4032379 4032337 [0] (1ms)
-00:21:22 EXEC  basename         4032382 4032381 /usr/bin/basename
-00:21:22 EXIT  basename         4032382 4032381 [0] (0ms)
-00:21:22 EXEC  sh               4032381 4032380 /bin/sh
-00:21:22 EXEC  dirname          4032384 4032381 /usr/bin/dirname
-00:21:22 EXIT  dirname          4032384 4032381 [0] (1ms)
-00:21:22 EXEC  readlink         4032387 4032386 /usr/bin/readlink
-^C
-```
-
-CMake build:
-
-```shell
-$ git submodule update --init --recursive       # check out libbpf
-$ mkdir build && cd build
-$ cmake ../examples/c
-$ make
-$ sudo ./bootstrap
-<...>
-```
-
-XMake build (Linux):
-
-```shell
-$ git submodule update --init --recursive       # check out libbpf
-$ cd examples/c
-$ xmake
-$ xmake run bootstrap
-```
-
-XMake build (Android):
-
-```shell
-$ git submodule update --init --recursive       # check out libbpf
-$ cd examples/c
-$ xmake f -p android
-$ xmake
-```
-
-Install [Xmake](https://github.com/xmake-io/xmake)
-
-```shell
-$ bash <(wget https://xmake.io/shget.text -O -)
-$ source ~/.xmake/profile
-```
-
-## Rust Examples
-
-Install `libbpf-cargo`:
-```shell
-$ cargo install libbpf-cargo
-```
-
-Build using `cargo`:
-```shell
-$ cd examples/rust
-$ cargo build --release
-$ sudo ./target/release/xdp 1
-<...>
 ```
 
 # Troubleshooting
