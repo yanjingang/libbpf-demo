@@ -27,14 +27,14 @@ int main(int argc, char **argv)
 	/* 设置libbpf错误和调试信息回调 */
 	libbpf_set_print(libbpf_print_fn);
 
-	/* 加载并验证BPF应用程序 */
+	/* 加载并验证hello.bpf.c应用程序 */
 	skel = hello_bpf__open_and_load();
 	if (!skel) {
 		fprintf(stderr, "Failed to open BPF skeleton\n");
 		return 1;
 	}
 
-	/* 附加程序到跟踪点 */
+	/* 附加hello.bpf.c程序到跟踪点 */
 	err = hello_bpf__attach(skel);
 	if (err) {
 		fprintf(stderr, "Failed to attach BPF skeleton\n");
