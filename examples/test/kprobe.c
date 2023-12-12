@@ -87,12 +87,12 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	/* Process events */
+	/* 处理收到的内核数据 */
 	printf("%-8s %-5s %-16s %-7s %s\n", "TIME", "EVENT", "FILENAME", "PID", "FILENAME/EXIT CODE");
 	while (!stop) {
+		// 轮询内核数据
 		err = ring_buffer__poll(rb, 100 /* timeout, ms */);
-		/* Ctrl-C will cause -EINTR */
-		if (err == -EINTR) {
+		if (err == -EINTR) {	/* Ctrl-C will cause -EINTR */
 			err = 0;
 			break;
 		}
@@ -102,15 +102,14 @@ int main(int argc, char **argv)
 		}
 	}
 
+	// while (!stop) {
+	// 	fprintf(stderr, ".");
+	// 	sleep(1);
+	// }
 
-	while (!stop) {
-		fprintf(stderr, ".");
-		sleep(1);
-	}
 
-
-	/* 销毁挂载的ebpf程序 */
 cleanup:
+	/* 销毁挂载的ebpf程序 */
 	kprobe_bpf__destroy(skel);
 	return -err;
 }
