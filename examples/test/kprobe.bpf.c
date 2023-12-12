@@ -1,11 +1,11 @@
 /**
  * 通过使用 kprobe（内核探针）在do_unlinkat函数的入口和退出处放置钩子，实现对该系统调用的跟踪
 */
+#include <string.h>
 #include "vmlinux.h"
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_tracing.h>
 #include <bpf/bpf_core_read.h>
-#include <string.h>
 #include "kprobe.h"
 
 // 定义许可证，以允许程序在内核中运行
@@ -39,7 +39,6 @@ int BPF_KPROBE(do_unlinkat, int dfd, struct filename *name)  // 该函数接受�
         return 0;
     // 设置数据
     e->pid = pid;
-    // memcpy(e->filename, filename, sizeof(filename));
     bpf_probe_read_str(&e->filename, sizeof(e->filename), (void *)filename);
 	e->exit_event = false;
     e->ns = bpf_ktime_get_ns();

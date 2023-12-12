@@ -1,16 +1,16 @@
 /**
- * ebpf loader
+ * ebpf 用户空间程序(loader、read ringbuffer)
 */
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <time.h>
 #include <errno.h>
 #include <sys/resource.h>
 #include <bpf/libbpf.h>
 #include "kprobe.skel.h"
 #include "kprobe.h"
-#include <time.h>
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	}
 
 	/* 处理收到的内核数据 */
-	printf("%-8s %-5s %-16s %-7s %s\n", "TIME", "EVENT", "FILENAME", "PID", "FILENAME/EXIT CODE");
+	printf("%-8s %-5s %-16s %-7s %s\n", "TIME", "EVENT", "FILENAME", "PID", "FILENAME/RET");
 	while (!stop) {
 		// 轮询内核数据
 		err = ring_buffer__poll(rb, 100 /* timeout, ms */);
