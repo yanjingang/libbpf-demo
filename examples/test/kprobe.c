@@ -67,13 +67,15 @@ int main(int argc, char **argv)
     err = kprobe_bpf__attach(skel);
     if (err) {
         fprintf(stderr, "Failed to attach BPF skeleton\n");
-        goto cleanup;
+        kprobe_bpf__destroy(skel);
+        return -err;
     }
 
     /* Control-C 停止信号 */
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        goto cleanup;
+        kprobe_bpf__destroy(skel);
+        return -err;
     }
 
     printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
@@ -84,7 +86,8 @@ int main(int argc, char **argv)
     if (!rb) {
         err = -1;
         fprintf(stderr, "Failed to create ring buffer\n");
-        goto cleanup;
+        kprobe_bpf__destroy(skel);
+        return -err;
     }
 
     /* 处理收到的内核数据 */
@@ -107,9 +110,4 @@ int main(int argc, char **argv)
     //     sleep(1);
     // }
 
-
-cleanup:
-    /* 销毁挂载的ebpf程序 */
-    kprobe_bpf__destroy(skel);
-    return -err;
 }

@@ -52,7 +52,8 @@ int main(int argc, char **argv)
     if (!skel->links.utest_add) {
         err = -errno;
         fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        goto cleanup;
+        uprobe_bpf__destroy(skel);
+        return -err;
     }
 
     /* 将 uretprobe 附加到使用相同二进制可执行文件的任何现有或未来进程 */
@@ -67,7 +68,8 @@ int main(int argc, char **argv)
     if (!skel->links.urettest_add) {
         err = -errno;
         fprintf(stderr, "Failed to attach uprobe: %d\n", err);
-        goto cleanup;
+        uprobe_bpf__destroy(skel);
+        return -err;
     }
 
     /* 让libbpf为 utest_sub/urettest_sub 执行自动附加
@@ -76,13 +78,15 @@ int main(int argc, char **argv)
     err = uprobe_bpf__attach(skel);
     if (err) {
         fprintf(stderr, "Failed to auto-attach BPF skeleton: %d\n", err);
-        goto cleanup;
+        uprobe_bpf__destroy(skel);
+        return -err;
     }
 
     /* Control-C 停止信号 */
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        goto cleanup;
+        uprobe_bpf__destroy(skel);
+        return -err;
     }
 
     printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
@@ -93,8 +97,4 @@ int main(int argc, char **argv)
         sleep(1);
     }
 
-cleanup:
-    /* 销毁挂载的ebpf程序 */
-    uprobe_bpf__destroy(skel);
-    return -err;
 }

@@ -38,12 +38,14 @@ int main(int argc, char **argv)
     err = hello_bpf__attach(skel);
     if (err) {
         fprintf(stderr, "Failed to attach BPF skeleton\n");
-        goto cleanup;
+        hello_bpf__destroy(skel);
+        return -err;
     }
 
     if (signal(SIGINT, sig_int) == SIG_ERR) {
         fprintf(stderr, "can't set signal handler: %s\n", strerror(errno));
-        goto cleanup;
+        hello_bpf__destroy(skel);
+        return -err;
     }
 
     printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
@@ -53,8 +55,4 @@ int main(int argc, char **argv)
         fprintf(stderr, ".");
         sleep(1);
     }
-
-cleanup:
-    hello_bpf__destroy(skel);
-    return -err;
 }
