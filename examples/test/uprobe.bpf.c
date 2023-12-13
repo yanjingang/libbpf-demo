@@ -22,7 +22,7 @@ int BPF_KRETPROBE(urettest_add, int ret)
     return 0;
 }
 
-// 在 SEC 宏中指定要捕获的 二进制文件的路径 和 要捕获的函数名称（已经指定二进制路径和函数名称，可直接使用xxx_bpf__attach(skel)附加 xxx.bpf.c 程序到跟踪点）
+// 在 SEC 宏中指定要捕获的 二进制文件的路径 和 函数名称（已经指定二进制路径和函数名称，可直接使用xxx_bpf__attach(skel)附加 xxx.bpf.c 程序到跟踪点）
 SEC("uprobe//home/work/project/libbpf-demo/examples/test/utest/build/utest:_Z9utest_subii")
 int BPF_KPROBE(utest_sub, int a, int b)
 {
