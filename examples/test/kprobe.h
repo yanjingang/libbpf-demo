@@ -6,8 +6,8 @@
 struct event {
     int pid;
     char filename[MAX_FILENAME_LEN];
-	bool exit_event;
-	int exit_code;
+    bool exit_event;
+    int exit_code;
     unsigned long long ns;
 };
 

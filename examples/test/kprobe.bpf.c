@@ -40,7 +40,7 @@ int BPF_KPROBE(do_unlinkat, int dfd, struct filename *name)  // 该函数接受�
     // 设置数据
     e->pid = pid;
     bpf_probe_read_str(&e->filename, sizeof(e->filename), (void *)filename);
-	e->exit_event = false;
+    e->exit_event = false;
     e->ns = bpf_ktime_get_ns();
     // 提交到ringbuf用户空间进行后处理
     bpf_ringbuf_submit(e, 0);
@@ -66,7 +66,7 @@ int BPF_KRETPROBE(do_unlinkat_exit, long ret)   // 捕获函数的返回值（re
         return 0;
     // 设置数据
     e->pid = pid;
-	e->exit_event = true;
+    e->exit_event = true;
     e->exit_code = ret;
     e->ns = bpf_ktime_get_ns();
     // 提交ringbuf样本空间
