@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message Symbol {
+    map<string, uint64> symbols = 1;
+};
