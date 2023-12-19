@@ -15,6 +15,7 @@ public:
 
     int utest_add(int a, int b)
     {
+        std::cout << "utest_add a = " << a << " b = " << b << std::endl;
         return a + b;
     }
 

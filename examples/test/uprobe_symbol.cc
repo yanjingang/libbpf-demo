@@ -56,8 +56,8 @@ int main(int argc, char **argv)
     int err, i;
     struct ring_buffer *rb = NULL;
 
-    std::string symbol_dump_file = "./symbols-utest_class.dump";
-    std::string func_name = "test::UTest::utest_add(int, int)";
+    std::string symbol_dump_file = "./symbols-utest_class.dump";    // symbols-utest_class.dump
+    std::string func_name = "test::UTest::utest_add(int, int)";  // test::UTest::utest_add(int, int)
     uint64_t func_offset = 0;
     char binary_path[PATH_MAX];
     pid_t pid = atoi(argv[1]);

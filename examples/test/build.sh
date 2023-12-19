@@ -33,7 +33,7 @@ strip --strip-all ${BIN_NAME}
 # run user space test
 pkill ${BIN_NAME}
 RUN_CMD="./${BIN_NAME}"
-nohup ${RUN_CMD} &
+nohup ${RUN_CMD} > ${BIN_NAME}.log &
 
 # run ebpf
 ps -ef | grep ${RUN_CMD} | grep -v grep 

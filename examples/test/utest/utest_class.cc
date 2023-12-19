@@ -12,10 +12,10 @@ int main(int argc, char **argv)
     auto obj = std::make_shared<UTest>();
 
     for (i = 0;; i++) {
+        std::cout << "i = " << i << std::endl;
+
         obj->utest_add(i, i + 1);
         obj->utest_sub(i * i, i);
-
-        std::cout << "i = " << i << std::endl;
 
         sleep(1);
     }
