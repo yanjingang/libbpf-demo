@@ -73,7 +73,8 @@ int main(int argc, char **argv) {
                 // set when not _Zxxx symbol
                 std::string::size_type s = symbol.find(kMangledSymbolPrefix);
                 if (s == std::string::npos) {
-                    symbolMap[symbol] = sym.st_value;               
+                    symbolMap[symbol] = sym.st_value;
+                    // std::cout << "Add SymbolMap: " << symbol << std::endl;
                     continue;
                 }
 
@@ -83,6 +84,7 @@ int main(int argc, char **argv) {
                 char* name = abi::__cxa_demangle(symbol.substr(s, e - s).c_str(), NULL, NULL, &status);
                 if (name != nullptr) {
                     symbolMap[name] = sym.st_value;
+                    // std::cout << "Add SymbolMap _Z: " << symbol << std::endl;
                 } else {
                     // FIXME:
                     //std::cout << "failed to demangle: "  << symbol << std::endl;
