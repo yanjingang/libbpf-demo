@@ -15,14 +15,14 @@ int BPF_KPROBE(do_sys_openat2, int dfd, struct filename *name)
 }
 
 
-const pid_t pid_filter = 0;
+// const pid_t pid_filter = 0;
 
-SEC("tp/syscalls/sys_enter_write")
-int handle_tp(void *ctx)
-{
-    pid_t pid = bpf_get_current_pid_tgid() >> 32;
-    if (pid_filter && pid != pid_filter)
-        return 0;
-    bpf_printk("BPF triggered sys_enter_write from PID %d.\n", pid);
-    return 0;
-}
+// SEC("tp/syscalls/sys_enter_write")
+// int handle_tp(void *ctx)
+// {
+//     pid_t pid = bpf_get_current_pid_tgid() >> 32;
+//     if (pid_filter && pid != pid_filter)
+//         return 0;
+//     bpf_printk("BPF triggered sys_enter_write from PID %d.\n", pid);
+//     return 0;
+// }

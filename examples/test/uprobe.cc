@@ -8,7 +8,7 @@
 #include <sys/resource.h>
 #include <bpf/libbpf.h>
 #include "uprobe.skel.h"
-// #include "proto/symbol.pb.h"
+#include "proto/symbol.pb.h"
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     skel->links.utest_add = bpf_program__attach_uprobe_opts(
         skel->progs.utest_add,
         -1,    // uprobe 的进程 ID，0 表示自身（自己的进程），-1 表示所有进程
-        "/home/work/project/libbpf-demo/examples/test/utest/build/utest",
+        "/home/work/project/libbpf-demo/examples/test/build/utest",
         0,    // offset for function
         &uprobe_opts);
     if (!skel->links.utest_add) {
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     skel->links.urettest_add = bpf_program__attach_uprobe_opts(
         skel->progs.urettest_add, 
         -1,    // uprobe 的进程 ID，0 表示自身（自己的进程），-1 表示所有进程
-        "/home/work/project/libbpf-demo/examples/test/utest/build/utest",
+        "/home/work/project/libbpf-demo/examples/test/build/utest",
         0,    // offset for function
         &uprobe_opts);
     if (!skel->links.urettest_add) {

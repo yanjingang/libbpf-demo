@@ -26,7 +26,7 @@ static void sig_int(int signo)
 // ring buffer data process
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
-    const struct event *e = data;
+    const struct event *e = reinterpret_cast<struct event *>(data);
     struct tm *tm;
     char ts[32];
     time_t t;

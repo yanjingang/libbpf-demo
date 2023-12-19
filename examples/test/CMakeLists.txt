@@ -105,7 +105,7 @@ foreach(app ${apps})
   bpf_object(${app_name} ${app_name}.bpf.c)
   add_dependencies(${app_name}_skel libbpf-build bpftool-build)
 
-  add_executable(${app_name} ${app_name}.c ${TEST_SRCS})
+  add_executable(${app_name} ${app_name}.cc ${TEST_SRCS})
   target_link_libraries(${app_name} ${app_name}_skel ${TEST_LIBS})
   # if(${app_name} STREQUAL profile)
   #   target_include_directories(${app_name} PRIVATE
