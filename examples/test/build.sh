@@ -9,7 +9,7 @@ echo "BIN_NAME: ${BIN_NAME}"
 
 # 1. build
 cd ${CUR_DIR}
-rm -rf build/utest*
+rm -rf build/${BIN_NAME}
 mkdir -p build && cd build
 cmake ..
 make
@@ -21,7 +21,7 @@ echo "check ${BIN_NAME} symbols: "
 echo "    `objdump -T ${BIN_NAME} |grep utest_add`"
 echo "    `objdump -T ${BIN_NAME} |grep utest_sub`"
 
-# dump utest symbols
+# dump symbols
 ./usymbol ${BIN_NAME} > symbols-${BIN_NAME}.txt
 cat symbols-${BIN_NAME}.txt | grep utest_
 
