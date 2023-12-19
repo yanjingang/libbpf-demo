@@ -11,6 +11,7 @@
 #include "uprobe_symbol.skel.h"
 #include "proto/symbol.pb.h"
 #include "utils.h"
+#include "uprobe_symbol.h"
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -23,6 +24,28 @@ static void sig_int(int signo)
     stop = 1;
 }
 
+// ring buffer data process
+static int handle_event(void *ctx, void *data, size_t data_sz)
+{
+    const struct event *e = reinterpret_cast<struct event *>(data);
+    struct tm *tm;
+    char ts[32];
+    time_t t;
+
+    time(&t);
+    tm = localtime(&t);
+    strftime(ts, sizeof(ts), "%H:%M:%S", tm);
+
+    if (e->exit_event) {
+        printf("%-8s %-5s %-7d %-7d %-7d %llums\n", ts, "EXIT", e->pid, 0, e->exit_ret, e->ns / 1000000);
+    } else {
+        printf("%-8s %-5s %-7d %-7d %-7d %llums\n", ts, "EXEC", e->pid, e->a, e->b, e->ns / 1000000);
+    }
+
+    return 0;
+}
+
+
 int main(int argc, char **argv)
 {
     if(argc < 2){
@@ -31,22 +54,24 @@ int main(int argc, char **argv)
     }
     struct uprobe_symbol_bpf *skel;
     int err, i;
-    LIBBPF_OPTS(bpf_uprobe_opts, uprobe_opts);
+    struct ring_buffer *rb = NULL;
 
     std::string symbol_dump_file = "./symbols-utest_class.dump";
     std::string func_name = "test::UTest::utest_add(int, int)";
-    std::string binary_path = "";   //home/work/project/libbpf-demo/examples/test/build/utest_class
-    char bin_path[PATH_MAX];
+    uint64_t func_offset = 0;
+    char binary_path[PATH_MAX];
     pid_t pid = atoi(argv[1]);
 
     // 通过pid获取可执行文件路径
-	if (pid){
-        if(get_binary_file_by_pid(pid, bin_path, sizeof(bin_path)) == 0){
-            binary_path = bin_path;
-            std::cout << "binary_path: " << binary_path << std::endl;
-        }
-		// get_pid_lib_path(pid, binary, path, path_sz);
+	if (!pid){
+        std::cout << "param pid invalid!" << std::endl;
+        return 0;
     }
+    if(!get_binary_file_by_pid(pid, binary_path, sizeof(binary_path)) == 0){    // get_pid_lib_path(pid, binary, path, path_sz);
+        std::cout << "failed to get binary file by pid!" << std::endl;
+        return 0;
+    }
+    std::cout << "binary_path: " << binary_path << std::endl;
 
     // 加载symbols.dump文件
     std::ifstream is(symbol_dump_file, std::ios::binary);
@@ -56,13 +81,15 @@ int main(int argc, char **argv)
     auto symbolMap = symbol->symbols();
 
     // 获取函数对应符号表的offset
-    uint64_t func_offset = 0;
     func_offset = symbolMap[func_name];
     std::cout << "func_offset: [" << func_offset << "] " << func_name << std::endl;
     if (!func_offset) {
         std::cout << "failed to find symbol!" << std::endl;
         return 0;
     }
+
+
+    LIBBPF_OPTS(bpf_uprobe_opts, uprobe_opts);
 
     /* 设置libbpf错误和调试信息回调 */
     libbpf_set_print(libbpf_print_fn);
@@ -84,7 +111,7 @@ int main(int argc, char **argv)
     skel->links.utest_add = bpf_program__attach_uprobe_opts(
         skel->progs.utest_add,
         -1,    // uprobe 的进程 ID，0 表示自身（自己的进程），-1 表示所有进程
-        binary_path.c_str(),
+        binary_path,
         func_offset,    // offset for function
         &uprobe_opts);
     if (!skel->links.utest_add) {
@@ -100,7 +127,7 @@ int main(int argc, char **argv)
     skel->links.urettest_add = bpf_program__attach_uprobe_opts(
         skel->progs.urettest_add, 
         -1,    // uprobe 的进程 ID，0 表示自身（自己的进程），-1 表示所有进程
-        binary_path.c_str(),
+        binary_path,
         func_offset,    // offset for function
         &uprobe_opts);
     if (!skel->links.urettest_add) {
@@ -121,9 +148,34 @@ int main(int argc, char **argv)
     printf("Successfully started! Please run `sudo cat /sys/kernel/debug/tracing/trace_pipe` "
            "to see output of the BPF programs.\n");
 
-    while (!stop) {
-        fprintf(stderr, ".");
-        sleep(1);
+
+    /* 设置环形缓冲区轮询 */
+    rb = ring_buffer__new(bpf_map__fd(skel->maps.rb), handle_event, NULL, NULL);
+    if (!rb) {
+        err = -1;
+        fprintf(stderr, "Failed to create ring buffer\n");
+        uprobe_symbol_bpf__destroy(skel);
+        return -err;
     }
+
+    /* 处理收到的内核数据 */
+    printf("%-8s %-5s %-16s %-7s %s\n", "TIME", "EVENT", "PID", "A", "B/RET");
+    while (!stop) {
+        // 轮询内核数据
+        err = ring_buffer__poll(rb, 100 /* timeout, ms */);
+        if (err == -EINTR) {    /* Ctrl-C will cause -EINTR */
+            err = 0;
+            break;
+        }
+        if (err < 0) {
+            printf("Error polling perf buffer: %d\n", err);
+            break;
+        }
+    }
+
+    // while (!stop) {
+    //     fprintf(stderr, ".");
+    //     sleep(1);
+    // }
 
 }
