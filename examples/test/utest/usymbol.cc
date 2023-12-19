@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
     const char kMangledSymbolPrefix[] = "_Z";
     const char kSymbolCharacters[] = "abcdefghijklmnopqrstuvwxyz" \
                                      "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+    std::string output_name;
 
     // init proto symbols map
     auto symbol = new Symbol();
@@ -27,6 +28,9 @@ int main(int argc, char **argv) {
 
     // each all bin or so file
     for (int j = 1; j < argc; j++) {
+        if(j == 1){
+            output_name = argv[j];
+        }
         std::cerr << "dump symbols: " << argv[j] << "\n";
         GElf_Shdr shdr;
 
@@ -84,7 +88,7 @@ int main(int argc, char **argv) {
                 char* name = abi::__cxa_demangle(symbol.substr(s, e - s).c_str(), NULL, NULL, &status);
                 if (name != nullptr) {
                     symbolMap[name] = sym.st_value;
-                    // std::cout << "Add SymbolMap _Z: " << symbol << std::endl;
+                    std::cout << "Add SymbolMap: " << symbol << " -> " << name << std::endl;
                 } else {
                     // FIXME:
                     //std::cout << "failed to demangle: "  << symbol << std::endl;
@@ -97,12 +101,14 @@ int main(int argc, char **argv) {
     }
 
     // dump symbol map to file
-    std::ofstream os("./symbols.dump", std::ios::binary);
+    // std::string dump_file = "./symbols.dump";
+    std::string dump_file = "./symbols-" + output_name + ".dump";
+    std::ofstream os(dump_file, std::ios::binary);
     symbol->SerializeToOstream(&os);
     os.close();
 
     // test load symbols from file
-    std::ifstream is("./symbols.dump", std::ios::binary);
+    std::ifstream is(dump_file, std::ios::binary);
     symbol = new Symbol();
     symbol->ParseFromIstream(&is);
     is.close();
