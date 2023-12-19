@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <libelf.h>
 #include <gelf.h>
-#include "symbol.pb.h"
+#include "proto/symbol.pb.h"
 
 int main(int argc, char **argv) {
     const char kMangledSymbolPrefix[] = "_Z";
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
 
     // each all bin or so file
     for (int j = 1; j < argc; j++) {
-        std::cerr << "dump: " << argv[j] << "\n";
+        std::cerr << "dump symbols: " << argv[j] << "\n";
         GElf_Shdr shdr;
 
         int fd = open(argv[j], O_RDONLY);
@@ -94,11 +94,20 @@ int main(int argc, char **argv) {
         close(fd);
     }
 
-    for (auto& x : symbolMap) {
-        std::cout << std::hex << std::setw(8) << x.second  << " : " << x.first << std::endl;
-    }
-    
+    // dump symbol map to file
     std::ofstream os("./symbols.dump", std::ios::binary);
     symbol->SerializeToOstream(&os);
     os.close();
+
+    // test load symbols from file
+    std::ifstream is("./symbols.dump", std::ios::binary);
+    symbol = new Symbol();
+    symbol->ParseFromIstream(&is);
+    is.close();
+    symbolMap = symbol->symbols();
+
+    // print symbol map
+    for (auto& x : symbolMap) {
+        std::cout << std::hex << std::setw(8) << x.second  << " : " << x.first << std::endl;
+    }
 }

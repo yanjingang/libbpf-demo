@@ -1,6 +1,28 @@
 cmake_minimum_required(VERSION 3.16)
 project(ebpf_test)
 
+# 1.symbol proto
+add_subdirectory(proto)
+
+
+# 2.user space test app
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -ggdb -rdynamic")   # debug
+# .h
+include_directories(
+    ./
+    /usr/include
+    /usr/local/include
+    ${PROTOBUF_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_BINARY_DIR}
+)
+# utest exec
+add_executable(utest utest/utest.cc)
+# usymbol exec
+add_executable(usymbol utest/usymbol.cc)
+target_link_libraries(usymbol protobuf elf symbol_proto)
+
+
+# 3. ebpf
 # find BpfObject
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/tools)
 
@@ -73,9 +95,9 @@ find_package(BpfObject REQUIRED)
 
 # Create an executable for each application
 file(GLOB apps *.bpf.c)
-if(NOT CARGO_EXISTS)
-  list(REMOVE_ITEM apps ${CMAKE_CURRENT_SOURCE_DIR}/profile.bpf.c)
-endif()
+# if(NOT CARGO_EXISTS)
+#   list(REMOVE_ITEM apps ${CMAKE_CURRENT_SOURCE_DIR}/profile.bpf.c)
+# endif()
 foreach(app ${apps})
   get_filename_component(app_name ${app} NAME_WE)
 
@@ -83,12 +105,13 @@ foreach(app ${apps})
   bpf_object(${app_name} ${app_name}.bpf.c)
   add_dependencies(${app_name}_skel libbpf-build bpftool-build)
 
-  add_executable(${app_name} ${app_name}.c)
-  target_link_libraries(${app_name} ${app_name}_skel)
-  if(${app_name} STREQUAL profile)
-    target_include_directories(${app_name} PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../blazesym/include)
-    target_link_libraries(${app_name}
-      ${CMAKE_CURRENT_SOURCE_DIR}/../../blazesym/target/release/libblazesym.a -lpthread -lrt -ldl)
-  endif()
+  add_executable(${app_name} ${app_name}.c ${TEST_SRCS})
+  target_link_libraries(${app_name} ${app_name}_skel ${TEST_LIBS})
+  # if(${app_name} STREQUAL profile)
+  #   target_include_directories(${app_name} PRIVATE
+  #     ${CMAKE_CURRENT_SOURCE_DIR}/../../blazesym/include)
+  #   target_link_libraries(${app_name}
+  #     ${CMAKE_CURRENT_SOURCE_DIR}/../../blazesym/target/release/libblazesym.a -lpthread -lrt -ldl)
+  # endif()
 endforeach()
+

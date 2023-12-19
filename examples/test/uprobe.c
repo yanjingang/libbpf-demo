@@ -8,6 +8,7 @@
 #include <sys/resource.h>
 #include <bpf/libbpf.h>
 #include "uprobe.skel.h"
+// #include "proto/symbol.pb.h"
 
 static int libbpf_print_fn(enum libbpf_print_level level, const char *format, va_list args)
 {
@@ -25,6 +26,15 @@ int main(int argc, char **argv)
     struct uprobe_bpf *skel;
     int err, i;
     LIBBPF_OPTS(bpf_uprobe_opts, uprobe_opts);
+
+
+    // load symbols from file
+    // std::ifstream is("./symbols.dump", std::ios::binary);
+    // symbol = new Symbol();
+    // symbol->ParseFromIstream(&is);
+    // is.close();
+    // symbolMap = symbol->symbols();
+
 
     /* 设置libbpf错误和调试信息回调 */
     libbpf_set_print(libbpf_print_fn);
