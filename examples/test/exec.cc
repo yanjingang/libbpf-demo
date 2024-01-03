@@ -39,7 +39,11 @@ static int handle_event(void *ctx, void *data, size_t data_sz)
     tm = localtime(&t);
     strftime(ts, sizeof(ts), "%H:%M:%S", tm);
 
-    printf("%s %d %d %s\n", ts, e->pid, e->uid, e->cmd);
+    if (e->is_exit) {
+        printf("%s %-5s %d %d %s %llums\n", ts, "EXIT", e->pid, e->uid, e->cmd, e->ns / 1000000);
+    } else {
+        printf("%s %-5s %d %d %s\n", ts, "EXEC", e->pid, e->uid, e->cmd);
+    }
 
     return 0;
 }
@@ -83,7 +87,7 @@ int main(int argc, char **argv)
     }
 
     /* 处理收到的内核数据 */
-    printf("%-8s %-7s %-7s %-16s\n", "TIME", "PID", "UID", "CMD");
+    printf("%-8s %-8s %-7s %-7s %-16s %-8s\n", "TIME", "TYPE", "PID", "UID", "CMD", "DURATION");
     while (!exiting) {
         // 轮询内核数据
         err = ring_buffer__poll(rb, 100 /* timeout, ms */);
