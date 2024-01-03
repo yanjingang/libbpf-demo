@@ -82,7 +82,8 @@ int snoop_process_exit(struct trace_event_raw_sched_process_template* ctx)
     e->pid = pid;
     e->uid = uid;
     e->ppid = BPF_CORE_READ(task, real_parent, tgid);
-    e->is_exit = true;  //(BPF_CORE_READ(task, exit_code) >> 8) & 0xff;
+    e->is_exit = true;
+    e->retval = (BPF_CORE_READ(task, exit_code) >> 8) & 0xff;
     bpf_get_current_comm(&e->cmd, sizeof(e->cmd));
     // 提交到ringbuf用户空间进行后处理
     bpf_ringbuf_submit(e, 0);
