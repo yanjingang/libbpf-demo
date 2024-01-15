@@ -12,10 +12,19 @@ struct {
     __uint(max_entries, 256 * 1024);    // 256 KB
 } rb SEC(".maps");
 
+// 定义事件ts结构体
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, 8192);
+    __type(key, pid_t);
+    __type(value, u64);
+} exec_start SEC(".maps");
 
+
+/*
 // 捕获进程执行事件，使用 ring buffer 向用户态打印输出
 SEC("tracepoint/syscalls/sys_enter_execve")
-int snoop_process_start(struct trace_event_raw_sys_enter* ctx)
+int handle_exec(struct trace_event_raw_sys_enter* ctx)
 {
     u64 id;
     pid_t pid;
@@ -49,15 +58,64 @@ int snoop_process_start(struct trace_event_raw_sys_enter* ctx)
     // bpf_printk("TRACEPOINT EXEC pid = %d, uid = %d, cmd = %s\n", pid, uid, e->cmd);
     return 0;
 }
+*/
+
+// 捕获进程执行事件，使用 ring buffer 向用户态打印输出
+SEC("tp/sched/sched_process_exec")
+int handle_exec(struct trace_event_raw_sched_process_exec* ctx)
+{
+    u64 id;
+    pid_t pid;
+    struct event *e;
+    struct task_struct *task;
+    unsigned fname_off;
+    u64 ts;
+
+    // 获取当前进程的用户ID
+    uid_t uid = (u32)bpf_get_current_uid_gid();
+    // 获取当前进程ID
+    id = bpf_get_current_pid_tgid();
+    pid = id >> 32;
+
+    // remeber pid start time
+    ts = bpf_ktime_get_ns();
+    bpf_map_update_elem(&exec_start, &pid, &ts, BPF_ANY);
+
+    // 预订一个ringbuf样本空间
+    e = bpf_ringbuf_reserve(&rb, sizeof(*e), 0);
+    if (!e)
+        return 0;
+    
+    // 获取当前进程的task_struct结构体
+    task = (struct task_struct*)bpf_get_current_task();
+
+    // 设置数据
+    e->pid = pid;
+    e->uid = uid;
+    e->ppid = BPF_CORE_READ(task, real_parent, pid);
+    bpf_get_current_comm(&e->cmd, sizeof(e->cmd));
+    e->ns = bpf_ktime_get_ns();
+    // 读取进程名称
+    fname_off = ctx->__data_loc_filename & 0xFFFF;
+    bpf_probe_read_str(&e->filename, sizeof(e->filename), (void *)ctx + fname_off);
+
+    // 提交到ringbuf用户空间进行后处理
+    bpf_ringbuf_submit(e, 0);
+
+    // 使用bpf_printk函数在内核日志中打印 PID 和文件名
+    // bpf_printk("TRACEPOINT EXEC pid = %d, uid = %d, cmd = %s\n", pid, uid, e->cmd);
+    return 0;
+}
+
 
 // 监控进程退出事件，使用 ring buffer 向用户态打印输出
 SEC("tp/sched/sched_process_exit")
-int snoop_process_exit(struct trace_event_raw_sched_process_template* ctx)
+int handle_exit(struct trace_event_raw_sched_process_template* ctx)
 {
     struct task_struct *task;
     struct event *e;
     pid_t pid, tid;
-    u64 id, ts, *start_ts, start_time = 0;
+    u64 id, ts, start_time = 0;
 
     // 获取当前进程的用户ID
     uid_t uid = (u32)bpf_get_current_uid_gid();
